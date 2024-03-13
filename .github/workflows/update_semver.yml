@@ -1,0 +1,14 @@
+name: 'Update Floating Version Tags'
+
+on:
+  release:
+    types:
+      - 'published'
+
+jobs:
+  update-semver:
+    name: 'Update Tags'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Update Floating Version Tags'
+        uses: zyactions/update-semver@v1
