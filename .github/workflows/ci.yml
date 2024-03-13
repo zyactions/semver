@@ -1,0 +1,102 @@
+name: 'CI'
+
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    types:
+      - 'opened'
+      - 'synchronize'
+      - 'reopened'
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: 'Test'
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - 'ubuntu-latest'
+          - 'macos-latest'
+          - 'windows-latest'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@v3'
+
+      - name: 'TEST: Parse Version'
+        id: test1
+        uses: './.'
+        with:
+          version: '1.2.3-alpha.1+build'
+
+      - name: 'FAILED: Parse Version'
+        if: |
+          steps.test1.outputs.valid != true ||
+          steps.test1.outputs.version != '1.2.3-alpha.1+build' ||
+          steps.test1.outputs.major != '1' ||
+          steps.test1.outputs.minor != '2' ||
+          steps.test1.outputs.patch != '3' ||
+          steps.test1.outputs.prerelease != 'alpha.1' ||
+          steps.test1.outputs.build != 'build'
+        run: >-
+          echo "${{ toJSON(steps.test1.outputs) }}"
+
+      - name: 'TEST: Parse Version from Ref'
+        id: test2
+        uses: './.'
+        with:
+          version: 'refs/tags/1.2.3-alpha.1+build'
+
+      - name: 'FAILED: Parse Version'
+        if: |
+          steps.test2.outputs.valid != true ||
+          steps.test2.outputs.version != '1.2.3-alpha.1+build' ||
+          steps.test2.outputs.major != '1' ||
+          steps.test2.outputs.minor != '2' ||
+          steps.test2.outputs.patch != '3' ||
+          steps.test2.outputs.prerelease != 'alpha.1' ||
+          steps.test2.outputs.build != 'build'
+        run: >-
+          echo "${{ toJSON(steps.test2.outputs) }}"
+
+      - name: 'TEST: Parse Version with Prefix'
+        id: test3
+        uses: './.'
+        with:
+          version: 'v1.2.3-alpha.1+build'
+          prefixes: |-
+            a
+            v
+            b
+
+      - name: 'FAILED: Parse Version'
+        if: |
+          steps.test3.outputs.valid != true ||
+          steps.test3.outputs.version != '1.2.3-alpha.1+build' ||
+          steps.test3.outputs.major != '1' ||
+          steps.test3.outputs.minor != '2' ||
+          steps.test3.outputs.patch != '3' ||
+          steps.test3.outputs.prerelease != 'alpha.1' ||
+          steps.test3.outputs.build != 'build'
+        run: >-
+          echo "${{ toJSON(steps.test3.outputs) }}"
+
+      - name: 'TEST: Fail on Error'
+        id: test4
+        uses: './.'
+        with:
+          version: 'invalid-version'
+          fail_on_error: false
+
+      - name: 'FAILED: Parse Version'
+        if: |
+          steps.test4.outputs.valid != false
+        run: >-
+          echo "${{ toJSON(steps.test4.outputs) }}"
+

@@ -1,0 +1,75 @@
+name: 'ZyAction: Semver'
+
+description: 'A GitHub Action that provides access to the individual parts of a SemVer2 version string.'
+author: 'Florian Bernd'
+
+branding:
+  icon: 'arrow-up-circle'
+  color: 'red'
+
+inputs:
+  version:
+    description: >-
+      A string containing the semantic version to parse.
+
+      Defaults to `GITHUB_REF` if not specified.
+    type: 'string'
+    required: false
+    default: ''
+  prefixes:
+    description: >-
+      An optional newline separated list of version prefixes to strip from the input version (e.g. `v` or `release-v`).
+    type: 'string'
+    required: false
+    default: ''
+  fail_on_error:
+    description: >-
+      Set `true` to fail, if the input `version` does not contain a valid semantic version.
+
+      Defaults to `true`.
+    type: 'boolean'
+    required: false
+    default: true
+
+outputs:
+  valid:
+    description: >-
+      Signals, if the input `version` contained a valid semantic version.
+    value: ${{ steps.semver.outputs.valid == 'true' && true || false }}
+  version:
+    description: >-
+      The (sanitized) semantic version string with any prefix trimmed from it.
+    value: ${{ steps.semver.outputs.version }}
+  major:
+    description: >-
+      The major version.
+    value: ${{ steps.semver.outputs.major }}
+  minor:
+    description: >-
+      The minor version.
+    value: ${{ steps.semver.outputs.minor }}
+  patch:
+    description: >-
+      The patch version.
+    value: ${{ steps.semver.outputs.patch }}
+  prerelease:
+    description: >-
+      The prerelease version.
+    value: ${{ steps.semver.outputs.prerelease }}
+  build:
+    description: >-
+      The build version.
+    value: ${{ steps.semver.outputs.build }}
+
+runs:
+  using: composite
+  steps:
+    - name: Parse Semantic Version
+      id: semver
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version != '' && inputs.version || github.ref }}
+        INPUT_PREFIXES: ${{ inputs.prefixes }}
+        INPUT_FAIL_ON_ERROR: ${{ inputs.fail_on_error && 'true' || 'false' }}
+      run: |
+        "${{ github.action_path }}/entrypoint.sh"
